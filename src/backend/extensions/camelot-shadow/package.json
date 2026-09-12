@@ -1,0 +1,7 @@
+{
+  "name": "puter-camelot-shadow",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "description": "Authenticated Puter adapter for the Camelot Shadow Subspace Bifrost boundary"
+}
