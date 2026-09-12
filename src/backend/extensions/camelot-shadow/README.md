@@ -1,16 +1,60 @@
 # Camelot Shadow Subspace adapter
 
-This Puter backend extension turns Puter into the **Shadow Castle workspace surface** for Camelot-OS.
+This integration turns Puter into the **Shadow Castle workspace surface** for Camelot-OS.
 
-It does **not** embed the Camelot native executor and it never receives the `camelot-shadowd` bearer token. All requests are sent to the narrow Bifrost Shadow adapter configured by:
+It does **not** embed the Camelot native executor and it never receives the `camelot-shadowd` bearer token. All privileged Shadow operations remain behind the narrow Bifrost Shadow adapter configured by:
 
 ```bash
 export CAMELOT_BIFROST_URL=http://127.0.0.1:4188
 ```
 
-Puter's extension authentication middleware remains enabled by default for every route in this module.
+Puter's extension authentication middleware remains enabled by default for every backend route in this module.
+
+## Puter-native Shadow Castle window
+
+The companion GUI extension lives at:
+
+```text
+src/gui/src/extensions/camelot-shadow/index.js
+```
+
+Puter's GUI build automatically includes JavaScript files and extension directories from `src/gui/src/extensions`, so no core GUI registry modification is required.
+
+Open the Puter user menu and choose:
+
+```text
+◐ Camelot Shadow Castle
+```
+
+The window provides:
+
+- native Shadow CPU health
+- authenticated mission summon flow
+- active Shadow session list
+- CPU/RAM/TTL/receipt telemetry
+- capability and egress boundary display
+- effect manifest proposal
+- R4/R5 HITL approve/deny controls
+- R6 UI path that remains fail-closed when Camelot server policy disables R6
+- append-only receipt viewer
+- seal-and-purge workspace action
+
+The browser GUI authenticates to Puter with the existing `puter.authToken`. It calls the Puter backend adapter, which then calls Bifrost. The browser never talks directly to `camelot-shadowd`.
 
 ## Security boundary
+
+```text
+Puter GUI (authenticated human)
+        |
+        v
+Puter camelot-shadow backend extension
+        |
+        v
+Bifrost governed Shadow adapter
+        |  native bearer inserted server-side
+        v
+camelot-shadowd (loopback-only Rust service)
+```
 
 - Puter: authenticated human workspace / desktop UX
 - Bifrost: allowlisted protocol boundary and secret broker
@@ -21,7 +65,7 @@ Puter's extension authentication middleware remains enabled by default for every
 
 The adapter intentionally exposes **no arbitrary reverse proxy** and **no shell execution endpoint**.
 
-## Routes
+## Backend routes
 
 - `GET /api/camelot-shadow/health`
 - `GET /api/camelot-shadow/sessions`
@@ -31,7 +75,7 @@ The adapter intentionally exposes **no arbitrary reverse proxy** and **no shell 
 - `GET /api/camelot-shadow/receipts/:session_id`
 - `POST /api/camelot-shadow/seal`
 
-R4-R6 effects are expected to stop at Camelot's HITL gate. R6 requires `sovereign` approval scope in the native daemon.
+R4-R5 effects stop at Camelot's HITL gate. R6 is fail-closed by default in `camelot-shadowd` and should remain disabled until Camelot has a server-authenticated sovereign identity path.
 
 ## Design invariant
 
