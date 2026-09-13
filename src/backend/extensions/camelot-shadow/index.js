@@ -7,6 +7,7 @@
  */
 
 const BIFROST_URL = String(process.env.CAMELOT_BIFROST_URL || 'http://127.0.0.1:4188').replace(/\/$/, '');
+const HITL_TOKEN = String(process.env.CAMELOT_HITL_TOKEN || '');
 
 function operatorFrom(req) {
   return String(
@@ -63,6 +64,7 @@ extension.get('/api/camelot-shadow/health', async (req, res) => {
       workspace: 'puter',
       boundary: 'bifrost-only',
       nativeCredentialExposed: false,
+      hitlAuthenticated: Boolean(HITL_TOKEN),
     });
   } catch (error) {
     send(res, 502, { error: error?.message || 'Camelot Shadow boundary unavailable' });
@@ -132,15 +134,22 @@ extension.post('/api/camelot-shadow/effects', async (req, res) => {
 
 extension.post('/api/camelot-shadow/decision', async (req, res) => {
   try {
+    if (!HITL_TOKEN || HITL_TOKEN.length < 24) {
+      return send(res, 503, { error: 'Authenticated Camelot HITL is not configured on this Puter server' });
+    }
     const sessionId = uuid(req.body?.session_id);
     const effectId = uuid(req.body?.effect_id);
     const decision = req.body?.decision === 'deny' ? 'deny' : 'approve';
     const scope = req.body?.scope === 'sovereign' ? 'sovereign' : 'once';
+    if (scope === 'sovereign') {
+      return send(res, 403, { error: 'R6 sovereign approval remains disabled until hardware-backed reauthentication is implemented' });
+    }
     const note = text(req.body?.note, 1000) || `${decision} from authenticated Puter Shadow Castle.`;
     const operator = operatorFrom(req);
 
     const result = await bifrost(`/sessions/${sessionId}/effects/${effectId}/${decision}`, {
       method: 'POST',
+      headers: { 'X-Camelot-HITL-Assertion': HITL_TOKEN },
       body: JSON.stringify(decision === 'approve'
         ? { operator, scope, note }
         : { operator, note }),
